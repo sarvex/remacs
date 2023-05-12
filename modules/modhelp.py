@@ -28,11 +28,9 @@ import re
 EMACS = os.path.join('..', 'src', 'emacs')
 
 def find_modules():
-    modpaths = []
-    for (dirname, dirs, files) in os.walk('.'):
-        if 'Makefile' in files:
-            modpaths.append(dirname)
-    return modpaths
+    return [
+        dirname for dirname, dirs, files in os.walk('.') if 'Makefile' in files
+    ]
 
 def cmd_test(args):
     mods = args.module
@@ -45,15 +43,15 @@ def cmd_test(args):
 
     failed = []
     for m in mods:
-        print('[*] %s: ------- start -------' % m)
-        print('[*] %s: running make' % m)
+        print(f'[*] {m}: ------- start -------')
+        print(f'[*] {m}: running make')
         r = sp.call(make_cmd, cwd=m)
         if r != 0:
-            print('[E] %s: make failed' % m)
+            print(f'[E] {m}: make failed')
             failed += [m]
             continue
 
-        print('[*] %s: running test' % m)
+        print(f'[*] {m}: running test')
         testpath = os.path.join(m, 'test.el')
         if os.path.isfile(testpath):
             emacs_cmd = [EMACS, '-batch', '-L', '.', '-l', 'ert',
@@ -61,11 +59,11 @@ def cmd_test(args):
             print(' '.join(emacs_cmd))
             r = sp.call(emacs_cmd)
             if r != 0:
-                print('[E] %s: test failed' % m)
+                print(f'[E] {m}: test failed')
                 failed += [m]
                 continue
         else:
-            print('[W] %s: no test to run' % m)
+            print(f'[W] {m}: no test to run')
 
     print('\n[*] %d/%d MODULES OK' % (len(mods)-len(failed), len(mods)))
     for m in failed:
@@ -81,7 +79,7 @@ def to_c_sym(sym):
 
 def cmd_init(args):
     if os.path.exists(args.module):
-        print("%s: file/dir '%s' already exists" % (__file__, args.module))
+        print(f"{__file__}: file/dir '{args.module}' already exists")
         return
 
     os.mkdir(args.module)
@@ -89,19 +87,19 @@ def cmd_init(args):
     template_vars = {
         'module': args.module,
         'func': args.fun,
-        'c_file': '%s.c' % args.module,
-        'c_func': 'F%s_%s' % (to_c_sym(args.module), to_c_sym(args.fun)),
-        'lisp_func': '%s-%s' % (args.module,  to_lisp_sym(args.fun)),
+        'c_file': f'{args.module}.c',
+        'c_func': f'F{to_c_sym(args.module)}_{to_c_sym(args.fun)}',
+        'lisp_func': f'{args.module}-{to_lisp_sym(args.fun)}',
     }
 
     for path, t in TEMPLATES.items():
         if isinstance(path, string.Template):
             path = path.substitute(template_vars)
         path = os.path.join(args.module, path)
-        print("writing %s..." % path)
+        print(f"writing {path}...")
         with open(path, "w+") as f:
             f.write(t.substitute(template_vars))
-    print("done! you can run %s test %s" % (__file__, args.module))
+    print(f"done! you can run {__file__} test {args.module}")
 
 
 def main():

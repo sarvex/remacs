@@ -42,8 +42,8 @@ SRC_REPO="https://sourceforge.net/projects/msys2/files/REPOS/MINGW/Sources"
 
 
 def check_output_maybe(*args,**kwargs):
-    if(DRY_RUN):
-        print("Calling: {}{}".format(args,kwargs))
+    if DRY_RUN:
+        print(f"Calling: {args}{kwargs}")
     else:
         return check_output(*args,**kwargs)
 
@@ -91,32 +91,32 @@ def gather_deps(deps, arch, directory):
     deps_files=[]
     for d in tmp:
         slt = d.split()
-        if(not slt==[]):
+        if slt != []:
             deps_files.append(slt[1])
 
     ## sort uniq
     deps_files = sorted(list(set(deps_files)))
     ## copy all files into local
-    print("Copying dependencies: {}".format(arch))
+    print(f"Copying dependencies: {arch}")
     check_output_maybe(["rsync", "-R"] + deps_files + ["."])
 
     ## And package them up
     os.chdir(directory)
-    print("Zipping: {}".format(arch))
-    check_output_maybe("zip -9r ../../emacs-{}-{}{}-deps.zip *"
-                       .format(EMACS_MAJOR_VERSION, DATE, arch),
-                       shell=True)
+    print(f"Zipping: {arch}")
+    check_output_maybe(
+        f"zip -9r ../../emacs-{EMACS_MAJOR_VERSION}-{DATE}{arch}-deps.zip *",
+        shell=True,
+    )
     os.chdir("../../")
 
 
 def download_source(tarball):
-    print("Downloading {}...".format(tarball))
+    print(f"Downloading {tarball}...")
     check_output_maybe(
-        "wget -a ../download.log -O {} {}/{}/download"
-        .format(tarball, SRC_REPO, tarball),
-        shell=True
+        f"wget -a ../download.log -O {tarball} {SRC_REPO}/{tarball}/download",
+        shell=True,
     )
-    print("Downloading {}... done".format(tarball))
+    print(f"Downloading {tarball}... done")
 
 def gather_source(deps):
 
@@ -159,7 +159,7 @@ def gather_source(deps):
             ## Switch names if necessary
             d = MUNGE_PKGS.get(d,d)
 
-            tarball = "{}-{}.src.tar.gz".format(d,pkg_version)
+            tarball = f"{d}-{pkg_version}.src.tar.gz"
 
             to_download.append(tarball)
 
@@ -168,9 +168,10 @@ def gather_source(deps):
     p.map(download_source,to_download)
 
     print("Zipping")
-    check_output_maybe("zip -9 ../emacs-{}-{}deps-mingw-w64-src.zip *"
-                       .format(EMACS_MAJOR_VERSION,DATE),
-                       shell=True)
+    check_output_maybe(
+        f"zip -9 ../emacs-{EMACS_MAJOR_VERSION}-{DATE}deps-mingw-w64-src.zip *",
+        shell=True,
+    )
 
     os.chdir("..")
 
@@ -215,7 +216,7 @@ deps=extract_deps()
 DRY_RUN=args.d
 
 if args.s:
-    DATE="{}-".format(check_output(["date", "+%Y-%m-%d"]).decode("utf-8").strip())
+    DATE = f'{check_output(["date", "+%Y-%m-%d"]).decode("utf-8").strip()}-'
 else:
     DATE=""
 

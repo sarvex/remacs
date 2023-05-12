@@ -18,7 +18,7 @@ import re
 
 
 def build_docstring(docstring=None, **kwargs):
-    return '\n'.join('/// ' + line.strip() for line in docstring.split('\n'))
+    return '\n'.join(f'/// {line.strip()}' for line in docstring.split('\n'))
 
 
 def build_lisp_fn_args(min_args=None, max_args=None, intspec=None,
@@ -66,9 +66,9 @@ def build_arg(arg):
     flipped = list(reversed(parts))
     name, typ = flipped[0], ' '.join([p for p in flipped[1:] if p not in ('register',)])
     if name[0] == '*':
-        typ = typ + '*'
+        typ += '*'
         name = name[1:]
-    return name + ': ' + known_types.get(typ, typ)
+    return f'{name}: {known_types.get(typ, typ)}'
 
 
 def build_lisp_fn_function_args(max_args=None, func_args=None, **kwargs):
@@ -79,25 +79,21 @@ def build_lisp_fn_function_args(max_args=None, func_args=None, **kwargs):
 
 def build_function_args(func_args=None, **kwargs):
     args = [build_arg(a.strip()) for a in func_args.split(',')]
-    if args == [None]:
-        return ''
-    return ', '.join(args)
+    return '' if args == [None] else ', '.join(args)
 
 
 def build_c_function_return(return_type=None, **kwargs):
-    if return_type == 'void':
-        return ''
-    return ' -> ' + known_types[return_type]
+    return '' if return_type == 'void' else f' -> {known_types[return_type]}'
 
 
 def build_c_function_comment(comment):
-    return '\n'.join('// ' + c.strip() for c in comment.split('\n'))
+    return '\n'.join(f'// {c.strip()}' for c in comment.split('\n'))
 
 
 def output_lisp_fn_rust_code(match):
     lisp_fn_args = build_lisp_fn_args(**match)
     if lisp_fn_args:
-        lisp_fn_args = '(' + lisp_fn_args + ')'
+        lisp_fn_args = f'({lisp_fn_args})'
     lisp_function_pieces = {
         'docstring': build_docstring(**match),
         'code': match['code'].strip(),
@@ -133,23 +129,20 @@ def parse_c_definition(c_code):
 \s*\((?P<func_args>[^\)]+)\)
 (?P<code>.+)''', re.DOTALL)
 
-    match = defun_regex.match(c_code)
-    if match:
+    if match := defun_regex.match(c_code):
         return ('defun', match.groupdict())
 
     c_func_regex = re.compile(r'''^\s*(?:/\*\s*(?P<comment>.+?)\*/)?\s*(?:static|extern)?\s*(?P<return_type>\w+)\s*(?P<func_name>[^\)]+)\s+\((?P<func_args>[^\)]+)\)
 (?P<code>.+)''', re.DOTALL)
 
-    match = c_func_regex.match(c_code)
-    if match:
+    if match := c_func_regex.match(c_code):
         return ('function', match.groupdict())
 
     return None
 
 
 def rustize(c_code):
-    parsed = parse_c_definition(c_code)
-    if parsed:
+    if parsed := parse_c_definition(c_code):
         if parsed[0] == 'defun':
             return output_lisp_fn_rust_code(parsed[1])
         elif parsed[0] == 'function':
@@ -161,9 +154,5 @@ def rustize(c_code):
 if __name__ == '__main__':
     import sys
 
-    if len(sys.argv) > 1:
-        fp = open(sys.argv[1])
-    else:
-        fp = sys.stdin
-
+    fp = open(sys.argv[1]) if len(sys.argv) > 1 else sys.stdin
     rustize(fp.read())

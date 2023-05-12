@@ -224,9 +224,10 @@ def flag2str(value, string):
 # make a string representation of a .fetchmailrc flag or negated flag
     str = ""
     if value != None:
-	str = str + (" ")
-	if value == FALSE: str = str + ("no ")
-	str = str + string;
+        str += " "
+        if value == FALSE:
+            str += "no "
+        str += string;
     return str
 
 class LabeledEntry(Frame):
@@ -324,12 +325,14 @@ class ListEdit(Frame):
 	    if self.list != None: del self.list[index]
 
 def ConfirmQuit(frame, context):
-    ans = Dialog(frame, 
-		 title = 'Quit?',
-		 text = 'Really quit ' + context + ' without saving?',
-		 bitmap = 'question',
-		 strings = ('Yes', 'No'),
-		 default = 1)
+    ans = Dialog(
+        frame,
+        title='Quit?',
+        text=f'Really quit {context} without saving?',
+        bitmap='question',
+        strings=('Yes', 'No'),
+        default=1,
+    )
     return ans.num == 0
 #
 # First, code to set the global fetchmail run controls.
